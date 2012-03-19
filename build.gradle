@@ -1,0 +1,65 @@
+apply plugin: "java"
+apply plugin: "eclipse"
+
+springDataMongoVersion = "1.0.1.RELEASE"
+springSecurityVersion = "3.1.0.RELEASE"
+queryDslVersion = "2.3.0"
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+queryPredicateSrcDir = 'src/generated/java'
+
+group = "org.springframework.security"
+version = "1.0"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "javax.inject:javax.inject:1"
+    compile "org.springframework.data:spring-data-mongodb:$springDataMongoVersion"
+    compile "org.springframework.security:spring-security-acl:$springSecurityVersion"
+    compile "com.mysema.querydsl:querydsl-apt:$queryDslVersion"
+    compile ("com.mysema.querydsl:querydsl-mongodb:$queryDslVersion") {
+        exclude module: 'morphia'
+    }
+}
+
+sourceSets {
+    main  {
+        java {
+            srcDirs queryPredicateSrcDir
+        }
+    }
+}
+
+task generateQueryPredicateClasses << {
+    File dest = new File(project.projectDir, queryPredicateSrcDir)
+    dest.mkdirs();
+    compilerArgs = [
+        '-proc:only',
+        '-processor', 'org.springframework.data.mongodb.repository.support.MongoAnnotationProcessor',
+        '-s', dest.absolutePath
+    ]
+    Map otherArgs = [
+        includeAntRuntime: false,
+        classpath: configurations.compile.asPath,
+        sourcepath: '',
+        target: targetCompatibility,
+        source: sourceCompatibility
+    ]
+    ant.javac(otherArgs){
+        sourceSets.main.allJava.addToAntBuilder(ant, 'src', FileCollection.AntType.MatchingTask)
+        compilerArgs.each { value ->
+            compilerarg(value: value)
+        }
+    }
+}
+task cleanQueryPredicateClass(type: Delete) {
+    delete new File(project.projectDir, 'src/generated')
+}
+
+clean.dependsOn(cleanQueryPredicateClass)
+compileJava.dependsOn(generateQueryPredicateClasses)
