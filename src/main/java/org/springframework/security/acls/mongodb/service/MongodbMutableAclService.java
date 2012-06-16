@@ -1,4 +1,4 @@
-package org.springframework.security.acls.mongo.service;
+package org.springframework.security.acls.mongodb.service;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
@@ -24,15 +24,15 @@ import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.security.acls.model.PermissionGrantingStrategy;
 import org.springframework.security.acls.model.Sid;
-import org.springframework.security.acls.mongo.dao.AclEntryRepository;
-import org.springframework.security.acls.mongo.dao.AclObjectIdentityRepository;
-import org.springframework.security.acls.mongo.dao.AclSidRepository;
-import org.springframework.security.acls.mongo.model.AclClass;
-import org.springframework.security.acls.mongo.model.AclEntry;
-import org.springframework.security.acls.mongo.model.AclObjectIdentity;
-import org.springframework.security.acls.mongo.model.AclSid;
-import org.springframework.security.acls.mongo.model.QAclObjectIdentity;
-import org.springframework.security.acls.mongo.model.QAclSid;
+import org.springframework.security.acls.mongodb.model.QAclObjectIdentity;
+import org.springframework.security.acls.mongodb.model.QAclSid;
+import org.springframework.security.acls.mongodb.dao.AclEntryRepository;
+import org.springframework.security.acls.mongodb.dao.AclObjectIdentityRepository;
+import org.springframework.security.acls.mongodb.dao.AclSidRepository;
+import org.springframework.security.acls.mongodb.model.AclClass;
+import org.springframework.security.acls.mongodb.model.AclEntry;
+import org.springframework.security.acls.mongodb.model.AclObjectIdentity;
+import org.springframework.security.acls.mongodb.model.AclSid;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.Assert;

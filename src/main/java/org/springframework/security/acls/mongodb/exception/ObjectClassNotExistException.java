@@ -1,4 +1,4 @@
-package org.springframework.security.acls.mongo.exception;
+package org.springframework.security.acls.mongodb.exception;
 
 public class ObjectClassNotExistException extends RuntimeException {
 

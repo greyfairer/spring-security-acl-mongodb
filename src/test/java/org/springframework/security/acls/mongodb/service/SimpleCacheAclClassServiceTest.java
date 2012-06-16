@@ -9,11 +9,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.security.acls.mongo.dao.AclClassRepository;
-import org.springframework.security.acls.mongo.exception.ObjectClassNotExistException;
-import org.springframework.security.acls.mongo.model.AclClass;
-import org.springframework.security.acls.mongo.model.QAclClass;
-import org.springframework.security.acls.mongo.service.SimpleCacheAclClassService;
+import org.springframework.security.acls.mongodb.model.QAclClass;
+import org.springframework.security.acls.mongodb.dao.AclClassRepository;
+import org.springframework.security.acls.mongodb.exception.ObjectClassNotExistException;
+import org.springframework.security.acls.mongodb.model.AclClass;
+import org.springframework.security.acls.mongodb.service.SimpleCacheAclClassService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SimpleCacheAclClassServiceTest {

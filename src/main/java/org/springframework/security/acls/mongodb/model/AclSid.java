@@ -1,4 +1,4 @@
-package org.springframework.security.acls.mongo.model;
+package org.springframework.security.acls.mongodb.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;

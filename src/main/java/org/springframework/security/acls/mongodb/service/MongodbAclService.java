@@ -1,4 +1,4 @@
-package org.springframework.security.acls.mongo.service;
+package org.springframework.security.acls.mongodb.service;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -33,14 +33,14 @@ import org.springframework.security.acls.model.Permission;
 import org.springframework.security.acls.model.PermissionGrantingStrategy;
 import org.springframework.security.acls.model.Sid;
 import org.springframework.security.acls.model.UnloadedSidException;
-import org.springframework.security.acls.mongo.dao.AclEntryRepository;
-import org.springframework.security.acls.mongo.dao.AclObjectIdentityRepository;
-import org.springframework.security.acls.mongo.dao.AclSidRepository;
-import org.springframework.security.acls.mongo.model.AclEntry;
-import org.springframework.security.acls.mongo.model.AclObjectIdentity;
-import org.springframework.security.acls.mongo.model.AclSid;
-import org.springframework.security.acls.mongo.model.QAclEntry;
-import org.springframework.security.acls.mongo.model.QAclObjectIdentity;
+import org.springframework.security.acls.mongodb.model.QAclEntry;
+import org.springframework.security.acls.mongodb.model.QAclObjectIdentity;
+import org.springframework.security.acls.mongodb.dao.AclEntryRepository;
+import org.springframework.security.acls.mongodb.dao.AclObjectIdentityRepository;
+import org.springframework.security.acls.mongodb.dao.AclSidRepository;
+import org.springframework.security.acls.mongodb.model.AclEntry;
+import org.springframework.security.acls.mongodb.model.AclObjectIdentity;
+import org.springframework.security.acls.mongodb.model.AclSid;
 import org.springframework.security.util.FieldUtils;
 import org.springframework.util.Assert;
 
