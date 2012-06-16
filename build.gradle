@@ -1,14 +1,18 @@
 apply plugin: "java"
 apply plugin: "eclipse"
 
-springDataMongoVersion = "1.0.1.RELEASE"
-springSecurityVersion = "3.1.0.RELEASE"
-queryDslVersion = "2.3.0"
+project.ext {
+    springVersion = "3.1.1.RELEASE"
+    springDataMongoVersion = "1.0.1.RELEASE"
+    springSecurityVersion = "3.1.0.RELEASE"
+    queryDslVersion = "2.3.0"
+    junitVersion = "4.10"
+    mockitoVersion = "1.9.0"
+    queryPredicateSrcDir = 'src/generated/java'
+}
 
 sourceCompatibility = 1.6
 targetCompatibility = 1.6
-
-queryPredicateSrcDir = 'src/generated/java'
 
 group = "org.springframework.security"
 version = "1.0"
@@ -25,6 +29,9 @@ dependencies {
     compile ("com.mysema.querydsl:querydsl-mongodb:$queryDslVersion") {
         exclude module: 'morphia'
     }
+    testCompile "org.springframework:spring-test:$springVersion"
+    testCompile "junit:junit:$junitVersion"
+    testCompile "org.mockito:mockito-core:$mockitoVersion"
 }
 
 sourceSets {

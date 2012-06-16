@@ -8,7 +8,9 @@ public class AclSid {
 	
 	@Id
 	private String id;
+	
 	private String sid;
+	
 	private boolean principal;
 	
 	public String getId() {

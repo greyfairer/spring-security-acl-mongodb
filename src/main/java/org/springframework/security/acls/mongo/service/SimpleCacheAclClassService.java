@@ -3,8 +3,8 @@ package org.springframework.security.acls.mongo.service;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.mongo.dao.AclClassRepository;
+import org.springframework.security.acls.mongo.exception.ObjectClassNotExistException;
 import org.springframework.security.acls.mongo.model.AclClass;
 import org.springframework.security.acls.mongo.model.QAclClass;
 
@@ -13,14 +13,19 @@ public class SimpleCacheAclClassService implements AclClassService {
 	
 	private Map<String, String> classNameToIdMap = new HashMap<String, String>();
 	
-	@Autowired
 	private AclClassRepository aclClassRepository;
+	
+	public SimpleCacheAclClassService(AclClassRepository aclClassRepository) {
+		super();
+		this.aclClassRepository = aclClassRepository;
+	}
 
 	@Override
-	public String getObjectClassId(String objectClassName) {
+	public String getObjectClassId(String objectClassName) throws ObjectClassNotExistException {
 		String id = getFromCache(objectClassName);
 		if (id != null) return id;
 		id = getFromDatastore(objectClassName);
+		if (id == null) throw new ObjectClassNotExistException(objectClassName);
 		putInCache(objectClassName, id);
 		return id;
 	}
