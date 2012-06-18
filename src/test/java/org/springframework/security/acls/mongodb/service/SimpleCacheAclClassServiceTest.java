@@ -1,7 +1,13 @@
 package org.springframework.security.acls.mongodb.service;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Before;
@@ -9,11 +15,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.security.acls.mongodb.model.QAclClass;
 import org.springframework.security.acls.mongodb.dao.AclClassRepository;
 import org.springframework.security.acls.mongodb.exception.ObjectClassNotExistException;
 import org.springframework.security.acls.mongodb.model.AclClass;
-import org.springframework.security.acls.mongodb.service.SimpleCacheAclClassService;
+import org.springframework.security.acls.mongodb.model.QAclClass;
+import org.springframework.security.util.FieldUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SimpleCacheAclClassServiceTest {
@@ -30,7 +36,8 @@ public class SimpleCacheAclClassServiceTest {
 	}
 
 	@Test
-	public void getObjectClassId_NewObjectClassName_ShouldRetrieveFromDataStore() {
+	@SuppressWarnings("unchecked")
+	public void getObjectClassId_NewObjectClassName_ShouldRetrieveFromDataStoreAndPutIntoCache() throws Exception {
 		// arrange
 		final String STUBBED_ACL_CLASS_ID = "fake-id";
 		final String STUBBED_ACL_CLASS_NAME = "com.example.model.StubbedClass";
@@ -47,6 +54,9 @@ public class SimpleCacheAclClassServiceTest {
 		
 		// verify
 		assertEquals("", STUBBED_ACL_CLASS_ID, objectClassId);
+		Map<String, String> cache = (Map<String, String>) FieldUtils.getFieldValue(cacheAclClassService, "classNameToIdMap");
+		assertTrue(cache.containsKey(STUBBED_ACL_CLASS_NAME));
+		assertTrue(cache.containsValue(STUBBED_ACL_CLASS_ID));
 		verify(mockRepository).findOne(eq(aclClass.className.eq(STUBBED_ACL_CLASS_NAME)));
 	}
 	

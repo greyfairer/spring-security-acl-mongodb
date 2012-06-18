@@ -32,6 +32,8 @@ dependencies {
     testCompile "org.springframework:spring-test:$springVersion"
     testCompile "junit:junit:$junitVersion"
     testCompile "org.mockito:mockito-core:$mockitoVersion"
+    testCompile "de.flapdoodle.embedmongo:de.flapdoodle.embedmongo:1.16"
+    testCompile "net.sf.ehcache:ehcache:1.5.0"
 }
 
 sourceSets {

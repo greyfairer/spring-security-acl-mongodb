@@ -3,7 +3,7 @@ package org.springframework.security.acls.mongodb.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "acl-object-identity")
+@Document(collection = "acl_object_identity")
 public class AclObjectIdentity {
 	
 	@Id

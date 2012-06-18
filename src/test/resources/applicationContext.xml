@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.1.xsd
+    http://www.springframework.org/schema/data/mongo
+    http://www.springframework.org/schema/data/mongo/spring-mongo-1.0.xsd">
+    
+    <bean id="embeddedMongodbHelper" class="org.springframework.security.acls.mongodb.service.EmbeddedMongodbHelper" init-method="start" destroy-method="stop">
+        <constructor-arg name="port" value="12345"/>
+        <constructor-arg name="version" value="V2_0_5"/>
+    </bean>
+    
+    <bean id="mongo" class="com.mongodb.Mongo" depends-on="embeddedMongodbHelper">
+        <constructor-arg name="host" value="localhost"/>
+        <constructor-arg name="port" value="12345"/>
+    </bean>
+    
+    <bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+        <constructor-arg name="mongo" ref="mongo"/>
+        <constructor-arg name="databaseName" value="spring_security_acl_mongo_test"/>
+    </bean>
+    
+    <mongo:repositories base-package="org.springframework.security.acls.mongodb.dao" />
+</beans>
