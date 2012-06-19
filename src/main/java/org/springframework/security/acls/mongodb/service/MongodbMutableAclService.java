@@ -40,17 +40,17 @@ import org.springframework.util.Assert;
 
 public class MongodbMutableAclService extends MongodbAclService implements MutableAclService {
 	
-	protected AclSidRepository sidRepository;
 	protected MongoTemplate mongoTemplate;
 
 	public MongodbMutableAclService(AclEntryRepository aclEntryRepository,
 			AclObjectIdentityRepository objectIdentityRepository,
+			AclSidRepository aclSidRepository,
 			AclClassService aclClassService,
 			AclCache aclCache,
 			AclAuthorizationStrategy aclAuthorizationStrategy,
 			PermissionFactory permissionFactory,
 			PermissionGrantingStrategy grantingStrategy) {
-		super(aclEntryRepository, objectIdentityRepository, aclClassService,
+		super(aclEntryRepository, objectIdentityRepository, aclSidRepository, aclClassService,
 				aclCache, aclAuthorizationStrategy,
 				permissionFactory, grantingStrategy);
 	}

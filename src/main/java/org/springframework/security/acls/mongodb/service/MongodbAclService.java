@@ -48,8 +48,8 @@ import com.mysema.query.types.expr.BooleanExpression;
 
 public class MongodbAclService implements AclService {
 
-	protected AclObjectIdentityRepository objectIdentityRepository;
 	protected AclEntryRepository aclEntryRepository;
+	protected AclObjectIdentityRepository objectIdentityRepository;
 	protected AclSidRepository sidRepository;
 	protected AclClassService aclClassService;
 	protected final AclCache aclCache;
@@ -57,11 +57,12 @@ public class MongodbAclService implements AclService {
 	protected PermissionFactory permissionFactory = new DefaultPermissionFactory();
 	protected final PermissionGrantingStrategy grantingStrategy;
 	
-	protected final Field fieldAces = FieldUtils.getField(AclImpl.class, "aces");
-	protected final Field fieldAcl = FieldUtils.getField(AccessControlEntryImpl.class, "acl");
+	private final Field fieldAces = FieldUtils.getField(AclImpl.class, "aces");
+	private final Field fieldAcl = FieldUtils.getField(AccessControlEntryImpl.class, "acl");
 
 	public MongodbAclService(AclEntryRepository aclEntryRepository,
 			AclObjectIdentityRepository objectIdentityRepository,
+			AclSidRepository sidRepository,
 			AclClassService aclClassService,
 			AclCache aclCache,
 			AclAuthorizationStrategy aclAuthorizationStrategy,
@@ -70,6 +71,7 @@ public class MongodbAclService implements AclService {
 		super();
 		this.aclEntryRepository = aclEntryRepository;
 		this.objectIdentityRepository = objectIdentityRepository;
+		this.sidRepository = sidRepository;
 		this.aclClassService = aclClassService;
 		this.aclCache = aclCache;
 		this.aclAuthorizationStrategy = aclAuthorizationStrategy;
@@ -77,22 +79,24 @@ public class MongodbAclService implements AclService {
 		this.grantingStrategy = grantingStrategy;
 		
 		this.fieldAces.setAccessible(true);
+		this.fieldAcl.setAccessible(true);
 	}
 
 	@Override
 	public List<ObjectIdentity> findChildren(ObjectIdentity parentIdentity) {
 		String objectClassId = aclClassService.getObjectClassId(parentIdentity.getType());
+		AclObjectIdentity parentObject = objectIdentityRepository.findOne(
+				QAclObjectIdentity.aclObjectIdentity.objectIdIdentity.eq((String)parentIdentity.getIdentifier()));
 		QAclObjectIdentity aclObjectIdentity = QAclObjectIdentity.aclObjectIdentity;
 		Iterator<AclObjectIdentity> aois = objectIdentityRepository.findAll(
-				aclObjectIdentity.parentObjectId.eq(
-						(String) parentIdentity.getIdentifier()).and(
+				aclObjectIdentity.parentObjectId.eq(parentObject.getId()).and(
 						aclObjectIdentity.objectIdClass.eq(objectClassId)))
 				.iterator();
 		List<ObjectIdentity> results = new ArrayList<ObjectIdentity>();
 		while (aois.hasNext()) {
 			AclObjectIdentity objectIdentity = aois.next();
 			results.add(new ObjectIdentityImpl(parentIdentity.getType(),
-					objectIdentity.getId()));
+					objectIdentity.getObjectIdIdentity()));
 		}
 		if (results.size() == 0)
 			return null;
@@ -129,6 +133,14 @@ public class MongodbAclService implements AclService {
 
 		// Check every requested object identity was found (throw
 		// NotFoundException if needed)
+		System.out.println("Input:");
+		for (ObjectIdentity oi : objects) {
+			System.out.println(oi.toString());
+		}
+		System.out.println("In result:");
+		for (ObjectIdentity oi : result.keySet()) {
+			System.out.println(oi.toString());
+		}
 		for (ObjectIdentity oid : objects) {
 			if (!result.containsKey(oid)) {
 				throw new NotFoundException("Unable to find ACL information for object identity '" + oid + "'");
@@ -193,9 +205,10 @@ public class MongodbAclService implements AclService {
 		QAclObjectIdentity aclObjectIdentity = QAclObjectIdentity.aclObjectIdentity;
 		BooleanExpression objectIdentityCondition = null;
 		for (ObjectIdentity oid : objectIdentities) {
+			String objectClassId = aclClassService.getObjectClassId(oid.getType());
 			BooleanExpression oidCondition = aclObjectIdentity.objectIdIdentity
 					.eq((String) oid.getIdentifier()).and(
-							aclObjectIdentity.objectIdClass.eq(oid.getType()));
+							aclObjectIdentity.objectIdClass.eq(objectClassId));
 			if (objectIdentityCondition == null) {
 				objectIdentityCondition = oidCondition;
 			} else {
@@ -319,9 +332,8 @@ public class MongodbAclService implements AclService {
 		String id = objectIdentity.getId();
 		Acl acl = acls.get(id);
 		if (acl == null) {
-			ObjectIdentity springOid = new ObjectIdentityImpl(
-					objectIdentity.getObjectIdClass(),
-					objectIdentity.getObjectIdIdentity());
+			String objectClassName = aclClassService.getObjectClassName(objectIdentity.getObjectIdClass());
+			ObjectIdentity springOid = new ObjectIdentityImpl(objectClassName, objectIdentity.getObjectIdIdentity());
 			Acl parentAcl = null;
 			if (objectIdentity.getParentObjectId() != null) {
 				parentAcl = new StubAclParent(objectIdentity.getParentObjectId());
@@ -393,7 +405,7 @@ public class MongodbAclService implements AclService {
         }
 
         // Now we have the parent (if there is one), create the true AclImpl
-        AclImpl result = new AclImpl(inputAcl.getObjectIdentity(), (Long) inputAcl.getId(), aclAuthorizationStrategy,
+        AclImpl result = new AclImpl(inputAcl.getObjectIdentity(), (String) inputAcl.getId(), aclAuthorizationStrategy,
                 grantingStrategy, parent, null, inputAcl.isEntriesInheriting(), inputAcl.getOwner());
 
         // Copy the "aces" from the input to the destination
@@ -429,6 +441,7 @@ public class MongodbAclService implements AclService {
         try {
             fieldAces.set(acl, aces);
         } catch (IllegalAccessException e) {
+        	e.printStackTrace();
             throw new IllegalStateException("Could not set AclImpl entries", e);
         }
     }

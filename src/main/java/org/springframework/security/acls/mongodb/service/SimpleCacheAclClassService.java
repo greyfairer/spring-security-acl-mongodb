@@ -2,6 +2,7 @@ package org.springframework.security.acls.mongodb.service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.springframework.security.acls.mongodb.model.QAclClass;
 import org.springframework.security.acls.mongodb.dao.AclClassRepository;
@@ -28,6 +29,17 @@ public class SimpleCacheAclClassService implements AclClassService {
 		if (id == null) throw new ObjectClassNotExistException(objectClassName);
 		putInCache(objectClassName, id);
 		return id;
+	}
+	
+	@Override
+	public String getObjectClassName(String objectClassId) throws ObjectClassNotExistException {
+		for (Entry<String, String> entry : classNameToIdMap.entrySet()) {
+			if (entry.getValue().equals(objectClassId)) return entry.getKey();
+		}
+		AclClass aclClass = aclClassRepository.findOne(objectClassId);
+		if (aclClass == null) throw new ObjectClassNotExistException(objectClassId);
+		classNameToIdMap.put(aclClass.getClassName(), objectClassId);
+		return aclClass.getClassName();
 	}
 	
 	@Override

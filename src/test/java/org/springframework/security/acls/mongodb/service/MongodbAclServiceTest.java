@@ -24,12 +24,16 @@ import org.springframework.security.acls.domain.DefaultPermissionFactory;
 import org.springframework.security.acls.domain.DefaultPermissionGrantingStrategy;
 import org.springframework.security.acls.domain.EhCacheBasedAclCache;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
+import org.springframework.security.acls.model.AccessControlEntry;
+import org.springframework.security.acls.model.Acl;
 import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.security.acls.mongodb.dao.AclClassRepository;
 import org.springframework.security.acls.mongodb.dao.AclEntryRepository;
 import org.springframework.security.acls.mongodb.dao.AclObjectIdentityRepository;
+import org.springframework.security.acls.mongodb.dao.AclSidRepository;
 import org.springframework.security.acls.mongodb.exception.ObjectClassNotExistException;
 import org.springframework.security.acls.mongodb.model.AclClass;
+import org.springframework.security.acls.mongodb.model.AclEntry;
 import org.springframework.security.acls.mongodb.model.AclObjectIdentity;
 import org.springframework.security.acls.mongodb.model.AclSid;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -57,6 +61,9 @@ public class MongodbAclServiceTest {
 	private AclObjectIdentityRepository objectIdentityRepository;
 	
 	@Autowired
+	private AclSidRepository aclSidRepository;
+	
+	@Autowired
 	private AclClassRepository aclClassRepository;
 	
 	private MongodbAclService mongodbAclService;
@@ -81,6 +88,7 @@ public class MongodbAclServiceTest {
 		mongodbAclService = new MongodbAclService(
 				aclEntryRepository, 
 				objectIdentityRepository, 
+				aclSidRepository,
 				new SimpleCacheAclClassService(aclClassRepository), 
 				cache, 
 				authorizationStrategy, 
@@ -113,30 +121,47 @@ public class MongodbAclServiceTest {
 		AclObjectIdentity aoi1 = new AclObjectIdentity();
 		aoi1.setObjectIdClass(objectClass.getId());
 		aoi1.setObjectIdIdentity("1");
-		aoi1.setOwnerId(sid1.getSid());
+		aoi1.setOwnerId(sid1.getId());
 		mongoTemplate.save(aoi1);
 		
 		AclObjectIdentity aoi2 = new AclObjectIdentity();
 		aoi2.setObjectIdClass(objectClass.getId());
 		aoi2.setObjectIdIdentity("2");
-		aoi2.setOwnerId(sid1.getSid());
-		aoi2.setParentObjectId(aoi1.getObjectIdIdentity());
+		aoi2.setOwnerId(sid1.getId());
+		aoi2.setParentObjectId(aoi1.getId());
 		mongoTemplate.save(aoi2);
 		
 		AclObjectIdentity aoi3 = new AclObjectIdentity();
 		aoi3.setObjectIdClass(objectClass.getId());
 		aoi3.setObjectIdIdentity("3");
-		aoi3.setOwnerId(sid1.getSid());
-		aoi3.setParentObjectId(aoi1.getObjectIdIdentity());
+		aoi3.setOwnerId(sid1.getId());
+		aoi3.setParentObjectId(aoi1.getId());
 		mongoTemplate.save(aoi3);
-		
 		
 		AclObjectIdentity aoi4 = new AclObjectIdentity();
 		aoi4.setObjectIdClass(objectClass.getId());
 		aoi4.setObjectIdIdentity("4");
 		aoi4.setOwnerId(sid1.getSid());
-		aoi4.setParentObjectId(aoi1.getObjectIdIdentity());
+		aoi4.setParentObjectId(aoi1.getId());
 		mongoTemplate.save(aoi4);
+		
+		AclEntry entry1 = new AclEntry();
+		entry1.setObjectIdentityId(aoi1.getId());
+		entry1.setSid(sid1.getId());
+		entry1.setOrder(1);
+		mongoTemplate.save(entry1);
+		
+		AclEntry entry2 = new AclEntry();
+		entry2.setObjectIdentityId(aoi1.getId());
+		entry2.setSid(sid2.getId());
+		entry2.setOrder(1);
+		mongoTemplate.save(entry2);
+		
+		AclEntry entry3 = new AclEntry();
+		entry3.setObjectIdentityId(aoi1.getId());
+		entry3.setSid(sid3.getId());
+		entry3.setOrder(1);
+		mongoTemplate.save(entry3);
 	}
 	
 	private Ehcache getCache() {
@@ -155,7 +180,10 @@ public class MongodbAclServiceTest {
 		ObjectIdentity parentIdentity = new ObjectIdentityImpl("blog.core.Post", "1");
 		List<ObjectIdentity> children = mongodbAclService.findChildren(parentIdentity);
 		assertNotNull("children should not be null", children);
-		assertEquals("Message expected 3, actual " + children.size(), 3, children.size());
+		assertEquals(3, children.size());
+		assertEquals(true, children.contains(new ObjectIdentityImpl("blog.core.Post", "2")));
+		assertEquals(true, children.contains(new ObjectIdentityImpl("blog.core.Post", "3")));
+		assertEquals(true, children.contains(new ObjectIdentityImpl("blog.core.Post", "4")));
 	}
 	
 	@Test(expected = ObjectClassNotExistException.class)
@@ -168,5 +196,23 @@ public class MongodbAclServiceTest {
 		
 		// verify
 	}
+	
+	@Test
+	public void readAclById_ValidObjectIdentity_ReturnData() throws Exception {
+		// arrange 
+		ObjectIdentity objectIdentity = new ObjectIdentityImpl("blog.core.Post", "1");
 
+		// action
+		Acl acl = mongodbAclService.readAclById(objectIdentity);
+		
+		// verify
+		assertNotNull("Acl should not be null", acl);
+		ObjectIdentity result = acl.getObjectIdentity();
+		assertEquals(result.getIdentifier(), objectIdentity.getIdentifier());
+		assertEquals(result.getType(), objectIdentity.getType());
+		
+		List<AccessControlEntry> entries = acl.getEntries();
+		assertNotNull("Acl entries list should not be null", entries);
+		assertEquals(3, entries.size());
+	}
 }
