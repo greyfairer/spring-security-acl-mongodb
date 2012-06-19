@@ -212,7 +212,7 @@ public class MongodbAclService implements AclService {
 			if (objectIdentityCondition == null) {
 				objectIdentityCondition = oidCondition;
 			} else {
-				objectIdentityCondition.or(oidCondition);
+				objectIdentityCondition = objectIdentityCondition.or(oidCondition);
 			}
 		}
 		List<AclObjectIdentity> aoiList = (List<AclObjectIdentity>) objectIdentityRepository
@@ -246,7 +246,7 @@ public class MongodbAclService implements AclService {
 			if (parentId != null) {
 				if (!acls.containsKey(parentId)) {
 					// Now try to find it in the cache
-                    MutableAcl cached = aclCache.getFromCache(new Long(parentId));
+                    MutableAcl cached = aclCache.getFromCache(parentId);
 
                     if ((cached == null) || !cached.isSidLoaded(sids)) {
                         parentIdsToLookup.add(parentId);
@@ -275,7 +275,7 @@ public class MongodbAclService implements AclService {
 			if (aclEntryCondition == null) {
 				aclEntryCondition = oidCondition;
 			} else {
-				aclEntryCondition.or(oidCondition);
+				aclEntryCondition = aclEntryCondition.or(oidCondition);
 			}
 		}
 
@@ -291,7 +291,7 @@ public class MongodbAclService implements AclService {
 			if (objectIdentityCondition == null) {
 				objectIdentityCondition = oidCondition;
 			} else {
-				objectIdentityCondition.or(oidCondition);
+				objectIdentityCondition = objectIdentityCondition.or(oidCondition);
 			}
 		}
 		List<AclObjectIdentity> aoiList = (List<AclObjectIdentity>) objectIdentityRepository
@@ -311,8 +311,7 @@ public class MongodbAclService implements AclService {
         }
     }
 
-	private List<AclEntry> findAclEntryOfObjectIdentity(
-			AclObjectIdentity objectIdentity, List<AclEntry> aclEntries) {
+	private List<AclEntry> findAclEntryOfObjectIdentity(AclObjectIdentity objectIdentity, List<AclEntry> aclEntries) {
 		List<AclEntry> result = new ArrayList<AclEntry>();
 		for (AclEntry entry : aclEntries) {
 			if (entry.getObjectIdentityId().equals(objectIdentity.getId())) {

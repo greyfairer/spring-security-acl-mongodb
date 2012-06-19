@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 
 import org.springframework.security.acls.mongodb.model.QAclClass;
 import org.springframework.security.acls.mongodb.dao.AclClassRepository;
+import org.springframework.security.acls.mongodb.exception.ObjectClassAlreadyExistedException;
 import org.springframework.security.acls.mongodb.exception.ObjectClassNotExistException;
 import org.springframework.security.acls.mongodb.model.AclClass;
 
@@ -23,12 +24,15 @@ public class SimpleCacheAclClassService implements AclClassService {
 
 	@Override
 	public String getObjectClassId(String objectClassName) throws ObjectClassNotExistException {
-		String id = getFromCache(objectClassName);
+		String id = classNameToIdMap.get(objectClassName);
 		if (id != null) return id;
-		id = getFromDatastore(objectClassName);
-		if (id == null) throw new ObjectClassNotExistException(objectClassName);
-		putInCache(objectClassName, id);
-		return id;
+
+		QAclClass aclClass = QAclClass.aclClass;
+		AclClass result = aclClassRepository.findOne(aclClass.className.eq(objectClassName));
+		if (result == null) throw new ObjectClassNotExistException(objectClassName);
+		
+		classNameToIdMap.put(objectClassName, result.getId());
+		return result.getId();
 	}
 	
 	@Override
@@ -44,23 +48,20 @@ public class SimpleCacheAclClassService implements AclClassService {
 	
 	@Override
 	public AclClass createAclClass(AclClass aclClass) {
-		return aclClassRepository.save(aclClass);
-	}
-
-	protected String getFromCache(String objectClassName) {
-		return classNameToIdMap.get(objectClassName);
-	}
-	
-	protected String getFromDatastore(String objectClassName) {
-		QAclClass aclClass = QAclClass.aclClass;
-		AclClass result = aclClassRepository.findOne(aclClass.className.eq(objectClassName));
-		if (result == null) {
-			return null;
+		if (aclClass == null) {
+			throw new IllegalArgumentException("aclClass must not be null");
 		}
-		return result.getId();
-	}
-	
-	protected void putInCache(String className, String id) {
-		classNameToIdMap.put(className, id);
+		
+		if (aclClass.getClassName() == null || aclClass.getClassName().isEmpty()) {
+			throw new IllegalArgumentException("aclClass must have a valid className");
+		}
+		
+		QAclClass qAclClass = QAclClass.aclClass;
+		AclClass result = aclClassRepository.findOne(qAclClass.className.eq(aclClass.getClassName()));
+		if (result != null) {
+			throw new ObjectClassAlreadyExistedException(aclClass.getClassName());
+		}
+		
+		return aclClassRepository.save(aclClass);
 	}
 }
