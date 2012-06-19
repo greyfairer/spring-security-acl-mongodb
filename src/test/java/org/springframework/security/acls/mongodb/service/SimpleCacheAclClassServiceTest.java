@@ -60,16 +60,17 @@ public class SimpleCacheAclClassServiceTest {
 		verify(mockRepository).findOne(eq(aclClass.className.eq(STUBBED_ACL_CLASS_NAME)));
 	}
 	
-	@Test(expected = ObjectClassNotExistException.class)
-	public void getObjectClassId_ObjectClassNameDoesNotExist_ThrowException() throws Exception {
+	@Test
+	public void getObjectClassId_ObjectClassNameDoesNotExist_ReturnNull() throws Exception {
 		// arrange 
 		final String STUBBED_ACL_CLASS_NAME = "com.example.model.StubbedClass";
 		SimpleCacheAclClassService cacheAclClassService = new SimpleCacheAclClassService(mockRepository);
 		
 		// action
-		cacheAclClassService.getObjectClassId(STUBBED_ACL_CLASS_NAME);
+		String objectClassId = cacheAclClassService.getObjectClassId(STUBBED_ACL_CLASS_NAME);
 		
 		// verify
+		assertNull(objectClassId);
 	}
 	
 	@Test
@@ -193,16 +194,16 @@ public class SimpleCacheAclClassServiceTest {
 		assertEquals(classNameToIdMap.get("SampleClass"), "1");
 	}
 	
-	@Test(expected = ObjectClassNotExistException.class)
+	@Test
 	public void getObjectClassName_NonExistedObjectClassId_ThrowException() throws Exception {
 		// arrange 
 		when(mockRepository.findOne(anyString())).thenReturn(null);
 		SimpleCacheAclClassService cacheAclClassService = new SimpleCacheAclClassService(mockRepository);
 		
 		// action
-		cacheAclClassService.getObjectClassName("nonExisted");
+		String objectClassName = cacheAclClassService.getObjectClassName("nonExisted");
 		
 		// verify
-
+		assertNull(objectClassName);
 	}
 }

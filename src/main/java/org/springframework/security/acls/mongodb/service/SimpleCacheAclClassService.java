@@ -29,7 +29,7 @@ public class SimpleCacheAclClassService implements AclClassService {
 
 		QAclClass aclClass = QAclClass.aclClass;
 		AclClass result = aclClassRepository.findOne(aclClass.className.eq(objectClassName));
-		if (result == null) throw new ObjectClassNotExistException(objectClassName);
+		if (result == null) return null;
 		
 		classNameToIdMap.put(objectClassName, result.getId());
 		return result.getId();
@@ -41,7 +41,7 @@ public class SimpleCacheAclClassService implements AclClassService {
 			if (entry.getValue().equals(objectClassId)) return entry.getKey();
 		}
 		AclClass aclClass = aclClassRepository.findOne(objectClassId);
-		if (aclClass == null) throw new ObjectClassNotExistException(objectClassId);
+		if (aclClass == null) return null;
 		classNameToIdMap.put(aclClass.getClassName(), objectClassId);
 		return aclClass.getClassName();
 	}

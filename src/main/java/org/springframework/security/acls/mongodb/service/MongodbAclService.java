@@ -85,13 +85,15 @@ public class MongodbAclService implements AclService {
 	@Override
 	public List<ObjectIdentity> findChildren(ObjectIdentity parentIdentity) {
 		String objectClassId = aclClassService.getObjectClassId(parentIdentity.getType());
+		if (objectClassId == null) return null;
+		
 		AclObjectIdentity parentObject = objectIdentityRepository.findOne(
 				QAclObjectIdentity.aclObjectIdentity.objectIdIdentity.eq((String)parentIdentity.getIdentifier()));
+		
 		QAclObjectIdentity aclObjectIdentity = QAclObjectIdentity.aclObjectIdentity;
 		Iterator<AclObjectIdentity> aois = objectIdentityRepository.findAll(
-				aclObjectIdentity.parentObjectId.eq(parentObject.getId()).and(
-						aclObjectIdentity.objectIdClass.eq(objectClassId)))
-				.iterator();
+				aclObjectIdentity.parentObjectId.eq(parentObject.getId())
+											    .and(aclObjectIdentity.objectIdClass.eq(objectClassId))).iterator();
 		List<ObjectIdentity> results = new ArrayList<ObjectIdentity>();
 		while (aois.hasNext()) {
 			AclObjectIdentity objectIdentity = aois.next();
@@ -133,14 +135,6 @@ public class MongodbAclService implements AclService {
 
 		// Check every requested object identity was found (throw
 		// NotFoundException if needed)
-		System.out.println("Input:");
-		for (ObjectIdentity oi : objects) {
-			System.out.println(oi.toString());
-		}
-		System.out.println("In result:");
-		for (ObjectIdentity oi : result.keySet()) {
-			System.out.println(oi.toString());
-		}
 		for (ObjectIdentity oid : objects) {
 			if (!result.containsKey(oid)) {
 				throw new NotFoundException("Unable to find ACL information for object identity '" + oid + "'");

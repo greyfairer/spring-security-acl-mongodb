@@ -1,9 +1,6 @@
 package org.springframework.security.acls.mongodb.service;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -209,15 +206,16 @@ public class MongodbAclServiceTest {
 		assertEquals(true, children.contains(new ObjectIdentityImpl("blog.core.Post", "4")));
 	}
 	
-	@Test(expected = ObjectClassNotExistException.class)
-	public void findChildren_WithNonExistedObjectClass_ThrowException() throws Exception {
+	@Test
+	public void findChildren_WithNonExistedObjectClass_ReturnNull() throws Exception {
 		// arrange 
 		ObjectIdentity parentIdentity = new ObjectIdentityImpl("blog.core.NonExisted", "1");
 
 		// action
-		mongodbAclService.findChildren(parentIdentity);
+		List<ObjectIdentity> children = mongodbAclService.findChildren(parentIdentity);
 		
 		// verify
+		assertNull(children);
 	}
 	
 	@Test
