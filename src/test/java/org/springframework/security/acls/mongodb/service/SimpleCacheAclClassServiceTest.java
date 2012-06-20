@@ -1,8 +1,15 @@
 package org.springframework.security.acls.mongodb.service;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Map;
 
@@ -14,7 +21,6 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.security.acls.mongodb.dao.AclClassRepository;
 import org.springframework.security.acls.mongodb.exception.ObjectClassAlreadyExistedException;
-import org.springframework.security.acls.mongodb.exception.ObjectClassNotExistException;
 import org.springframework.security.acls.mongodb.model.AclClass;
 import org.springframework.security.acls.mongodb.model.QAclClass;
 import org.springframework.security.util.FieldUtils;

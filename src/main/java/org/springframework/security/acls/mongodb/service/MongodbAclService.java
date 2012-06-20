@@ -372,9 +372,9 @@ public class MongodbAclService implements AclService {
 		Sid sid;
 		AclSid aclSid = sidRepository.findOne(id);
 		if (aclSid.isPrincipal()) {
-			sid = new PrincipalSid(id);
+			sid = new PrincipalSid(aclSid.getSid());
 		} else {
-			sid = new GrantedAuthoritySid(id);
+			sid = new GrantedAuthoritySid(aclSid.getSid());
 		}
 		return sid;
 	}

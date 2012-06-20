@@ -26,15 +26,19 @@ import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.security.acls.TargetObject;
 import org.springframework.security.acls.domain.AclAuthorizationStrategy;
 import org.springframework.security.acls.domain.AclAuthorizationStrategyImpl;
+import org.springframework.security.acls.domain.AclImpl;
 import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.acls.domain.ConsoleAuditLogger;
+import org.springframework.security.acls.domain.CumulativePermission;
 import org.springframework.security.acls.domain.DefaultPermissionFactory;
 import org.springframework.security.acls.domain.DefaultPermissionGrantingStrategy;
 import org.springframework.security.acls.domain.EhCacheBasedAclCache;
+import org.springframework.security.acls.domain.GrantedAuthoritySid;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.model.AccessControlEntry;
 import org.springframework.security.acls.model.Acl;
+import org.springframework.security.acls.model.AlreadyExistsException;
 import org.springframework.security.acls.model.MutableAcl;
 import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.security.acls.model.ObjectIdentity;
@@ -44,6 +48,9 @@ import org.springframework.security.acls.mongodb.dao.AclClassRepository;
 import org.springframework.security.acls.mongodb.dao.AclEntryRepository;
 import org.springframework.security.acls.mongodb.dao.AclObjectIdentityRepository;
 import org.springframework.security.acls.mongodb.dao.AclSidRepository;
+import org.springframework.security.acls.mongodb.model.AclClass;
+import org.springframework.security.acls.mongodb.model.AclEntry;
+import org.springframework.security.acls.mongodb.model.AclObjectIdentity;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -66,6 +73,8 @@ public class MongodbMutableAclServiceTest {
     private final ObjectIdentity childOid = new ObjectIdentityImpl(TARGET_CLASS, "102");
 	
 	private static CacheManager cacheManager;
+	
+	private EhCacheBasedAclCache cache;
 
 	@Autowired
 	private MongoOperations mongoTemplate;
@@ -107,7 +116,7 @@ public class MongodbMutableAclServiceTest {
         		new SimpleGrantedAuthority("ROLE_ADMINISTRATOR"),
         		new SimpleGrantedAuthority("ROLE_ADMINISTRATOR")
         		);
-        EhCacheBasedAclCache cache = new EhCacheBasedAclCache(getCache());
+        cache = new EhCacheBasedAclCache(getCache());
         mongodbMutableAclService = new MongodbMutableAclService(
 				aclEntryRepository, 
 				objectIdentityRepository, 
@@ -188,7 +197,6 @@ public class MongodbMutableAclServiceTest {
         List<Permission> delete = Arrays.asList(BasePermission.DELETE);
         List<Sid> pSid = Arrays.asList((Sid)new PrincipalSid(auth));
 
-
         assertTrue(topParent.isGranted(read, pSid, false));
         assertFalse(topParent.isGranted(write, pSid, false));
         assertTrue(middleParent.isGranted(delete, pSid, false));
@@ -266,4 +274,166 @@ public class MongodbMutableAclServiceTest {
 
         SecurityContextHolder.clearContext();
 	}
+	
+	@Test
+    public void deleteAclAlsoDeletesChildren() throws Exception {
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        mongodbMutableAclService.createAcl(topParentOid);
+        MutableAcl middleParent = mongodbMutableAclService.createAcl(middleParentOid);
+        MutableAcl child = mongodbMutableAclService.createAcl(childOid);
+        child.setParent(middleParent);
+        mongodbMutableAclService.updateAcl(middleParent);
+        mongodbMutableAclService.updateAcl(child);
+        // Check the childOid really is a child of middleParentOid
+        Acl childAcl = mongodbMutableAclService.readAclById(childOid);
+
+        assertEquals(middleParentOid, childAcl.getParentAcl().getObjectIdentity());
+
+        // Delete the mid-parent and test if the child was deleted, as well
+        mongodbMutableAclService.deleteAcl(middleParentOid, true);
+
+        try {
+            mongodbMutableAclService.readAclById(middleParentOid);
+            fail("It should have thrown NotFoundException");
+        }
+        catch (NotFoundException expected) {
+            assertTrue(true);
+        }
+        try {
+            mongodbMutableAclService.readAclById(childOid);
+            fail("It should have thrown NotFoundException");
+        }
+        catch (NotFoundException expected) {
+            assertTrue(true);
+        }
+
+        Acl acl = mongodbMutableAclService.readAclById(topParentOid);
+        assertNotNull(acl);
+        assertEquals(((MutableAcl) acl).getObjectIdentity(), topParentOid);
+    }
+	
+	@Test(expected = IllegalArgumentException.class)
+    public void createAclRejectsNullParameter() throws Exception {
+        mongodbMutableAclService.createAcl(null);
+    }
+	
+	@Test(expected = AlreadyExistsException.class)
+    public void createAclForADuplicateDomainObject() throws Exception {
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        ObjectIdentity duplicateOid = new ObjectIdentityImpl(TARGET_CLASS, "100");
+        mongodbMutableAclService.createAcl(duplicateOid);
+        mongodbMutableAclService.createAcl(duplicateOid);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void deleteAclRejectsNullParameters() throws Exception {
+    	mongodbMutableAclService.deleteAcl(null, true);
+    }
+    
+    @Test
+    public void deleteAclRemovesRowsFromDatabase() throws Exception {
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        MutableAcl child = mongodbMutableAclService.createAcl(childOid);
+        child.insertAce(0, BasePermission.DELETE, new PrincipalSid(auth), false);
+        mongodbMutableAclService.updateAcl(child);
+
+        // Remove the child and check all related database rows were removed accordingly
+        mongodbMutableAclService.deleteAcl(childOid, false);
+        
+        assertEquals(1, mongoTemplate.findAll(AclClass.class).size());
+        assertEquals(0, mongoTemplate.findAll(AclObjectIdentity.class).size());
+        assertEquals(0, mongoTemplate.findAll(AclEntry.class).size());
+
+        // Check the cache
+        assertNull(cache.getFromCache(childOid));
+        assertNull(cache.getFromCache("102"));
+    }
+    
+    @Test
+    public void childrenAreClearedFromCacheWhenParentIsUpdated() throws Exception {
+        Authentication auth = new TestingAuthenticationToken("ben", "ignored","ROLE_ADMINISTRATOR");
+        auth.setAuthenticated(true);
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        ObjectIdentity parentOid = new ObjectIdentityImpl(TARGET_CLASS, "104");
+        ObjectIdentity childOid = new ObjectIdentityImpl(TARGET_CLASS, "105");
+
+        MutableAcl parent = mongodbMutableAclService.createAcl(parentOid);
+        MutableAcl child = mongodbMutableAclService.createAcl(childOid);
+
+        child.setParent(parent);
+        mongodbMutableAclService.updateAcl(child);
+
+        parent = (AclImpl) mongodbMutableAclService.readAclById(parentOid);
+        parent.insertAce(0, BasePermission.READ, new PrincipalSid("ben"), true);
+        mongodbMutableAclService.updateAcl(parent);
+
+        parent = (AclImpl) mongodbMutableAclService.readAclById(parentOid);
+        parent.insertAce(1, BasePermission.READ, new PrincipalSid("scott"), true);
+        mongodbMutableAclService.updateAcl(parent);
+
+        child = (MutableAcl) mongodbMutableAclService.readAclById(childOid);
+        parent = (MutableAcl) child.getParentAcl();
+
+        assertEquals("Fails because child has a stale reference to its parent", 2, parent.getEntries().size());
+        assertEquals(1, parent.getEntries().get(0).getPermission().getMask());
+        assertEquals(new PrincipalSid("ben"), parent.getEntries().get(0).getSid());
+        assertEquals(1, parent.getEntries().get(1).getPermission().getMask());
+        assertEquals(new PrincipalSid("scott"), parent.getEntries().get(1).getSid());
+    }
+    
+    @Test
+    public void childrenAreClearedFromCacheWhenParentisUpdated2() throws Exception {
+        Authentication auth = new TestingAuthenticationToken("system", "secret","ROLE_IGNORED");
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        ObjectIdentityImpl rootObject = new ObjectIdentityImpl(TARGET_CLASS, "1");
+
+        MutableAcl parent = mongodbMutableAclService.createAcl(rootObject);
+        MutableAcl child = mongodbMutableAclService.createAcl(new ObjectIdentityImpl(TARGET_CLASS, "2"));
+        child.setParent(parent);
+        mongodbMutableAclService.updateAcl(child);
+
+        parent.insertAce(0, BasePermission.ADMINISTRATION, new GrantedAuthoritySid("ROLE_ADMINISTRATOR"), true);
+        mongodbMutableAclService.updateAcl(parent);
+
+        parent.insertAce(1, BasePermission.DELETE, new PrincipalSid("terry"), true);
+        mongodbMutableAclService.updateAcl(parent);
+
+        child = (MutableAcl) mongodbMutableAclService.readAclById(new ObjectIdentityImpl(TARGET_CLASS, "2"));
+
+        parent = (MutableAcl) child.getParentAcl();
+
+        assertEquals(2, parent.getEntries().size());
+        assertEquals(16, parent.getEntries().get(0).getPermission().getMask());
+        assertEquals(new GrantedAuthoritySid("ROLE_ADMINISTRATOR"), parent.getEntries().get(0).getSid());
+        assertEquals(8, parent.getEntries().get(1).getPermission().getMask());
+        assertEquals(new PrincipalSid("terry"), parent.getEntries().get(1).getSid());
+    }
+    
+    @Test
+    public void cumulativePermissions() {
+       Authentication auth = new TestingAuthenticationToken("ben", "ignored", "ROLE_ADMINISTRATOR");
+       auth.setAuthenticated(true);
+       SecurityContextHolder.getContext().setAuthentication(auth);
+
+       ObjectIdentity topParentOid = new ObjectIdentityImpl(TARGET_CLASS, "110");
+       MutableAcl topParent = mongodbMutableAclService.createAcl(topParentOid);
+
+       // Add an ACE permission entry
+       Permission cm = new CumulativePermission().set(BasePermission.READ).set(BasePermission.ADMINISTRATION);
+       assertEquals(17, cm.getMask());
+       Sid benSid = new PrincipalSid(auth);
+       topParent.insertAce(0, cm, benSid, true);
+       assertEquals(1, topParent.getEntries().size());
+
+       // Explicitly save the changed ACL
+       topParent = mongodbMutableAclService.updateAcl(topParent);
+
+       // Check the mask was retrieved correctly
+       assertEquals(17, topParent.getEntries().get(0).getPermission().getMask());
+       assertTrue(topParent.isGranted(Arrays.asList(cm), Arrays.asList(benSid), true));
+
+       SecurityContextHolder.clearContext();
+   }
 }

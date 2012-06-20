@@ -1,10 +1,9 @@
 package org.springframework.security.acls.mongodb.service;
 
-import org.springframework.security.acls.mongodb.exception.ObjectClassNotExistException;
 import org.springframework.security.acls.mongodb.model.AclClass;
 
 public interface AclClassService {
-	String getObjectClassId(String objectClassName) throws ObjectClassNotExistException;
-	String getObjectClassName(String objectClassId) throws ObjectClassNotExistException;
+	String getObjectClassId(String objectClassName);
+	String getObjectClassName(String objectClassId);
 	AclClass createAclClass(AclClass aclClass);
 }

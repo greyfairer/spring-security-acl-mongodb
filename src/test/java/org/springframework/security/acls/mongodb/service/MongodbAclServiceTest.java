@@ -1,6 +1,9 @@
 package org.springframework.security.acls.mongodb.service;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +37,6 @@ import org.springframework.security.acls.mongodb.dao.AclClassRepository;
 import org.springframework.security.acls.mongodb.dao.AclEntryRepository;
 import org.springframework.security.acls.mongodb.dao.AclObjectIdentityRepository;
 import org.springframework.security.acls.mongodb.dao.AclSidRepository;
-import org.springframework.security.acls.mongodb.exception.ObjectClassNotExistException;
 import org.springframework.security.acls.mongodb.model.AclClass;
 import org.springframework.security.acls.mongodb.model.AclEntry;
 import org.springframework.security.acls.mongodb.model.AclObjectIdentity;

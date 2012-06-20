@@ -4,11 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.springframework.security.acls.mongodb.model.QAclClass;
 import org.springframework.security.acls.mongodb.dao.AclClassRepository;
 import org.springframework.security.acls.mongodb.exception.ObjectClassAlreadyExistedException;
-import org.springframework.security.acls.mongodb.exception.ObjectClassNotExistException;
 import org.springframework.security.acls.mongodb.model.AclClass;
+import org.springframework.security.acls.mongodb.model.QAclClass;
 
 
 public class SimpleCacheAclClassService implements AclClassService {
@@ -23,7 +22,7 @@ public class SimpleCacheAclClassService implements AclClassService {
 	}
 
 	@Override
-	public String getObjectClassId(String objectClassName) throws ObjectClassNotExistException {
+	public String getObjectClassId(String objectClassName) {
 		String id = classNameToIdMap.get(objectClassName);
 		if (id != null) return id;
 
@@ -36,7 +35,7 @@ public class SimpleCacheAclClassService implements AclClassService {
 	}
 	
 	@Override
-	public String getObjectClassName(String objectClassId) throws ObjectClassNotExistException {
+	public String getObjectClassName(String objectClassId) {
 		for (Entry<String, String> entry : classNameToIdMap.entrySet()) {
 			if (entry.getValue().equals(objectClassId)) return entry.getKey();
 		}
