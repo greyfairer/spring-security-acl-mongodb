@@ -95,10 +95,14 @@ public class SimpleCacheAclClassServiceTest {
 		// action
 		String objectClassId1 = cacheAclClassService.getObjectClassId(STUBBED_ACL_CLASS_NAME);
 		String objectClassId2 = cacheAclClassService.getObjectClassId(STUBBED_ACL_CLASS_NAME);
+		String objectClassName1 = cacheAclClassService.getObjectClassName(STUBBED_ACL_CLASS_ID);
+		String objectClassName2 = cacheAclClassService.getObjectClassName(STUBBED_ACL_CLASS_ID);
 		
 		// verify
 		assertEquals(objectClassId1, STUBBED_ACL_CLASS_ID);
 		assertEquals(objectClassId2, STUBBED_ACL_CLASS_ID);
+		assertEquals(objectClassName1, STUBBED_ACL_CLASS_NAME);
+		assertEquals(objectClassName2, STUBBED_ACL_CLASS_NAME);
 		
 		verify(mockRepository, times(1)).findOne(aclClass.className.eq(STUBBED_ACL_CLASS_NAME));
 	}
