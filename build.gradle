@@ -3,7 +3,7 @@ apply plugin: "eclipse"
 
 project.ext {
     springVersion = "3.1.1.RELEASE"
-    springDataMongoVersion = "1.0.1.RELEASE"
+    springDataMongoVersion = "1.0.2.RELEASE"
     springSecurityVersion = "3.1.0.RELEASE"
     queryDslVersion = "2.3.0"
     junitVersion = "4.10"
