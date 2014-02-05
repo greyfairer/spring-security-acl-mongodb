@@ -1,22 +1,23 @@
 apply plugin: "java"
 apply plugin: "eclipse"
+apply plugin: "maven"
 apply from:'file:emma.gradle'
 
 project.ext {
-    springVersion = "3.1.1.RELEASE"
-    springDataMongoVersion = "1.0.2.RELEASE"
-    springSecurityVersion = "3.1.0.RELEASE"
-    queryDslVersion = "2.3.0"
+    springVersion = "4.0.0.RELEASE"
+    springDataMongoVersion = "1.3.3.RELEASE"
+    springSecurityVersion = "3.2.0.RELEASE"
+    queryDslVersion = "3.3.0"
     junitVersion = "4.10"
-    mockitoVersion = "1.9.0"
+    mockitoVersion = "1.9.5"
     queryPredicateSrcDir = 'src/generated/java'
 }
 
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
 
 group = "org.springframework.security"
-version = "3.1.0.RELEASE"
+version = "3.2.0.RELEASE"
 
 repositories {
     mavenCentral()
@@ -33,10 +34,11 @@ dependencies {
     testCompile "org.springframework:spring-test:$springVersion"
     testCompile "junit:junit:$junitVersion"
     testCompile "org.mockito:mockito-core:$mockitoVersion"
-    testCompile "de.flapdoodle.embedmongo:de.flapdoodle.embedmongo:1.16"
+    testCompile "de.flapdoodle.embedmongo:de.flapdoodle.embedmongo:1.18"
     testCompile "net.sf.ehcache:ehcache:1.5.0"
-    emma "emma:emma:2.0.5312"
-    emma "emma:emma_ant:2.0.5312"
+    testCompile "com.google.guava:guava:14.0.1"
+    emma "emma:emma:2.1.5320"
+    emma "emma:emma_ant:2.1.5320"
 }
 
 sourceSets {
@@ -51,7 +53,7 @@ task generateQueryPredicateClasses << {
     File dest = new File(project.projectDir, queryPredicateSrcDir)
     dest.mkdirs();
     compilerArgs = [
-        '-proc:only',
+        '-proc:only', '--stacktrace',
         '-processor', 'org.springframework.data.mongodb.repository.support.MongoAnnotationProcessor',
         '-s', dest.absolutePath
     ]

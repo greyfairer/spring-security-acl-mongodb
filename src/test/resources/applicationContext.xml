@@ -11,7 +11,7 @@
     
     <bean id="embeddedMongodbHelper" class="org.springframework.security.acls.mongodb.service.EmbeddedMongodbHelper" init-method="start" destroy-method="stop">
         <constructor-arg name="port" value="12345"/>
-        <constructor-arg name="version" value="V2_0_5"/>
+        <constructor-arg name="version" value="V2_1_1"/>
     </bean>
     
     <bean id="mongo" class="com.mongodb.Mongo" depends-on="embeddedMongodbHelper">
