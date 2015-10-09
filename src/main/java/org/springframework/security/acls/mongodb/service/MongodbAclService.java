@@ -56,7 +56,7 @@ public class MongodbAclService implements AclService {
 	protected final AclAuthorizationStrategy aclAuthorizationStrategy;
 	protected PermissionFactory permissionFactory = new DefaultPermissionFactory();
 	protected final PermissionGrantingStrategy grantingStrategy;
-	
+
 	private final Field fieldAces = FieldUtils.getField(AclImpl.class, "aces");
 	private final Field fieldAcl = FieldUtils.getField(AccessControlEntryImpl.class, "acl");
 
@@ -77,7 +77,7 @@ public class MongodbAclService implements AclService {
 		this.aclAuthorizationStrategy = aclAuthorizationStrategy;
 		this.permissionFactory = permissionFactory;
 		this.grantingStrategy = grantingStrategy;
-		
+
 		this.fieldAces.setAccessible(true);
 		this.fieldAcl.setAccessible(true);
 	}
@@ -86,10 +86,12 @@ public class MongodbAclService implements AclService {
 	public List<ObjectIdentity> findChildren(ObjectIdentity parentIdentity) {
 		String objectClassId = aclClassService.getObjectClassId(parentIdentity.getType());
 		if (objectClassId == null) return null;
-		
+
 		AclObjectIdentity parentObject = objectIdentityRepository.findOne(
-				QAclObjectIdentity.aclObjectIdentity.objectIdIdentity.eq((String)parentIdentity.getIdentifier()));
-		
+				QAclObjectIdentity.aclObjectIdentity.objectIdIdentity.eq((String) parentIdentity.getIdentifier())
+																	 .and(QAclObjectIdentity.aclObjectIdentity.objectIdClass.eq(objectClassId))
+		);
+
 		QAclObjectIdentity aclObjectIdentity = QAclObjectIdentity.aclObjectIdentity;
 		Iterator<AclObjectIdentity> aois = objectIdentityRepository.findAll(
 				aclObjectIdentity.parentObjectId.eq(parentObject.getId())
@@ -200,9 +202,17 @@ public class MongodbAclService implements AclService {
 		BooleanExpression objectIdentityCondition = null;
 		for (ObjectIdentity oid : objectIdentities) {
 			String objectClassId = aclClassService.getObjectClassId(oid.getType());
-			BooleanExpression oidCondition = aclObjectIdentity.objectIdIdentity
-					.eq((String) oid.getIdentifier()).and(
-							aclObjectIdentity.objectIdClass.eq(objectClassId));
+			BooleanExpression oidCondition;
+			if (objectClassId == null) {
+				oidCondition = aclObjectIdentity.objectIdIdentity
+						.eq((String) oid.getIdentifier()).and(
+								aclObjectIdentity.objectIdClass.isNull());
+
+			} else {
+				oidCondition = aclObjectIdentity.objectIdIdentity
+						.eq((String) oid.getIdentifier()).and(
+								aclObjectIdentity.objectIdClass.eq(objectClassId));
+			}
 			if (objectIdentityCondition == null) {
 				objectIdentityCondition = oidCondition;
 			} else {
@@ -211,10 +221,10 @@ public class MongodbAclService implements AclService {
 		}
 		List<AclObjectIdentity> aoiList = (List<AclObjectIdentity>) objectIdentityRepository
 				.findAll(objectIdentityCondition, aclObjectIdentity.objectIdIdentity.asc());
-		
-		
+
+
 		Set<String> parentAclIds = getParentIdsToLookup(acls, aoiList, sids);
-		
+
 		if (parentAclIds.size() > 0) {
 			lookUpParentAcls(acls, parentAclIds, sids);
 		}
@@ -230,7 +240,7 @@ public class MongodbAclService implements AclService {
         }
 		return resultMap;
 	}
-	
+
 	private Set<String> getParentIdsToLookup(Map<Serializable, Acl> acls, List<AclObjectIdentity> aoiList, List<Sid> sids) {
 		List<String> objectIdentityIds = new ArrayList<String>();
 		Set<String> parentIdsToLookup = new HashSet<String>();
@@ -254,14 +264,14 @@ public class MongodbAclService implements AclService {
 				}
 			}
 		}
-		 
+
 		List<AclEntry> entries = getAssociatedAclEntries(objectIdentityIds);
 		for (AclObjectIdentity aoi : aoiList) {
 			convertObjectIdentityIntoAclObject(acls, aoi, entries);
 		}
 		return parentIdsToLookup;
 	}
-	
+
 	private List<AclEntry> getAssociatedAclEntries(List<String> objectIdentityIds) {
 		BooleanExpression aclEntryCondition = null;
 		for (String oid : objectIdentityIds) {
@@ -276,7 +286,7 @@ public class MongodbAclService implements AclService {
 		List<AclEntry> aclEntries = (List<AclEntry>) aclEntryRepository.findAll(aclEntryCondition, QAclEntry.aclEntry.order.asc());
 		return aclEntries;
 	}
-	
+
 	private void lookUpParentAcls(Map<Serializable, Acl> acls, Set<String> parentIds, List<Sid> sids) {
 		QAclObjectIdentity aclObjectIdentity = QAclObjectIdentity.aclObjectIdentity;
 		BooleanExpression objectIdentityCondition = null;
@@ -295,7 +305,7 @@ public class MongodbAclService implements AclService {
 			lookUpParentAcls(acls, parentIdsToLookup, sids);
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
     private List<AccessControlEntryImpl> readAces(AclImpl acl) {
         try {
@@ -331,15 +341,15 @@ public class MongodbAclService implements AclService {
 			if (objectIdentity.getParentObjectId() != null) {
 				parentAcl = new StubAclParent(objectIdentity.getParentObjectId());
 			}
-			
+
 			Sid owner = createSidFromMongoId(objectIdentity.getOwnerId());
-			
+
 			acl = new AclImpl(springOid, id, aclAuthorizationStrategy,
 					grantingStrategy, parentAcl, null,
 					objectIdentity.isEntriesInheriting(), owner);
 			acls.put(id, acl);
 		}
-		
+
 		List<AclEntry> belongedEntries = findAclEntryOfObjectIdentity(objectIdentity, aclEntries);
 		for (AclEntry entry : belongedEntries) {
 			if (entry.getSid() != null) {
@@ -353,11 +363,11 @@ public class MongodbAclService implements AclService {
 			}
 		}
 	}
-	
+
 	private AccessControlEntryImpl convertAclEntryIntoObject(Acl acl, AclEntry aclEntry) {
 		String aceId = aclEntry.getId();
 		Sid recipient = createSidFromMongoId(aclEntry.getSid());
-		
+
 		int mask = aclEntry.getMask();
         Permission permission = permissionFactory.buildFromMask(mask);
         boolean granting = aclEntry.isGranting();
@@ -367,7 +377,7 @@ public class MongodbAclService implements AclService {
         return new AccessControlEntryImpl(aceId, acl, recipient, permission, granting,
                 auditSuccess, auditFailure);
 	}
-	
+
 	private Sid createSidFromMongoId(String id) {
 		Sid sid;
 		AclSid aclSid = sidRepository.findOne(id);
@@ -378,7 +388,7 @@ public class MongodbAclService implements AclService {
 		}
 		return sid;
 	}
-	
+
 	private AclImpl convert(Map<Serializable, Acl> inputMap, String currentIdentity) {
         Assert.notEmpty(inputMap, "InputMap required");
         Assert.notNull(currentIdentity, "CurrentIdentity required");
@@ -421,7 +431,7 @@ public class MongodbAclService implements AclService {
 
         return result;
     }
-	
+
 	private void setAclOnAce(AccessControlEntryImpl ace, AclImpl acl) {
         try {
             fieldAcl.set(ace, acl);
