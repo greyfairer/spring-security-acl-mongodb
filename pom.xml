@@ -107,4 +107,18 @@
             </plugin>
         </plugins>
     </build>
+
+
+    <distributionManagement>
+        <repository>
+            <id>redsys-repo-releases</id>
+            <name>redsys-repo-releases</name>
+            <url>${releases.url}</url>
+        </repository>
+        <snapshotRepository>
+            <id>redsys-repo-snapshots</id>
+            <name>redsys-repo-snapshots</name>
+            <url>${snapshots.url}</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>
