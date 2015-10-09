@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.springframework.security</groupId>
     <artifactId>spring-security-acl-mongodb</artifactId>
-    <version>3.2.2.DPP</version>
+    <version>3.2.4.DPP</version>
     <dependencies>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
-            <version>4.0.3.RELEASE</version>
+            <version>4.0.6.RELEASE</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -28,7 +28,7 @@
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-mongodb</artifactId>
-            <version>1.4.1.RELEASE</version>
+            <version>1.5.5.RELEASE</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -58,7 +58,7 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-acl</artifactId>
-            <version>3.2.1.RELEASE</version>
+            <version>3.2.4.RELEASE</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
